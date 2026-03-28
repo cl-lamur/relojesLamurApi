@@ -1,0 +1,32 @@
+## Carpetas de build — Railway construye desde el Dockerfile
+**/bin/
+**/obj/
+**/out/
+
+## Visual Studio — archivos de IDE locales
+.vs/
+**/.vs/
+**/*.vsidx
+**/*.suo
+**/*.user
+**/.vscode/
+
+## Logs locales
+**/logs/
+*.log
+
+## Secretos locales
+**/appsettings.Development.json
+**/.env
+railway.env.example
+
+## Node
+**/node_modules/
+**/dist/
+
+## Git
+.git/
+
+## OS
+.DS_Store
+Thumbs.db

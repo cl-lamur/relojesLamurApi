@@ -1,0 +1,34 @@
+# .dockerignore — excluye archivos innecesarios de la imagen Docker
+# Reduce tamaño y tiempo de build
+
+# Carpetas de build locales
+**/bin/
+**/obj/
+**/out/
+
+# Logs locales
+**/logs/
+
+# Secretos y configuración local
+**/appsettings.Development.json
+**/.env
+**/*.user
+**/*.suo
+
+# Git
+.git/
+.gitignore
+
+# Visual Studio
+.vs/
+**/*.vsidx
+
+# Scripts de administración (no van en producción)
+**/Scripts/
+
+# Migraciones snapshot (se aplican al arrancar la app)
+# **/Migrations/  ? NO ignorar: EF las necesita en runtime
+
+# Node / Angular (si estuviera en el mismo repo)
+**/node_modules/
+**/dist/

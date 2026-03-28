@@ -1,0 +1,36 @@
+## Archivos de build .NET
+**/bin/
+**/obj/
+**/out/
+
+## Logs locales
+**/logs/
+*.log
+
+## Secretos y configuración local
+**/appsettings.Development.json
+**/.env
+*.user
+*.suo
+.vs/
+
+## Visual Studio
+**/*.vsidx
+**/.vs/
+
+## Migraciones snapshot locales — Railway las genera desde el Dockerfile
+# **/Migrations/  ? NO ignorar: EF las necesita en runtime
+
+## Scripts de administración local
+**/Scripts/*.ps1
+
+## Archivos Railway/Docker de desarrollo
+railway.env.example
+
+## Paquetes Node
+**/node_modules/
+**/dist/
+
+## OS
+.DS_Store
+Thumbs.db
