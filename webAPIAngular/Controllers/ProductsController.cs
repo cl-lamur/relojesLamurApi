@@ -3,13 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using RelojesLamur.API.Common;
 using RelojesLamur.API.DTOs.Common;
 using RelojesLamur.API.DTOs.Products;
+using RelojesLamur.API.Services;
 using RelojesLamur.API.Services.Interfaces;
 
 namespace RelojesLamur.API.Controllers;
 
 [ApiController]
 [Route("api/products")]
-public class ProductsController(IProductService productService) : ControllerBase
+public class ProductsController(IProductService productService, FirebaseStorageService firebaseStorageService) : ControllerBase
 {
     // GET /api/products
     [HttpGet]
@@ -36,6 +37,26 @@ public class ProductsController(IProductService productService) : ControllerBase
             return NotFound(ApiResponse.Fail($"Producto {id} no encontrado."));
 
         return Ok(ApiResponse<ProductDetailDto>.Ok(result));
+    }
+
+    // POST /api/products/upload
+    [HttpPost("upload")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> UploadImage(IFormFile file)
+    {
+        try
+        {
+            var url = await firebaseStorageService.UploadAsync(file);
+            return Ok(ApiResponse<object>.Ok(new { url }, "Imagen subida correctamente."));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ApiResponse.Fail(ex.Message));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ApiResponse.Fail("Error al subir la imagen."));
+        }
     }
 
     // POST /api/products
