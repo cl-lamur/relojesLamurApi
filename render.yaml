@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: relojes-lamur-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: oregon
+    plan: free
+    envVars:
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: Jwt__Secret
+        sync: false
+      - key: Jwt__Issuer
+        value: RelojesLamurAPI
+      - key: Jwt__Audience
+        value: RelojesLamurClient
+      - key: Jwt__ExpirationDays
+        value: "7"
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Cors__AllowedOrigins__0
+        sync: false

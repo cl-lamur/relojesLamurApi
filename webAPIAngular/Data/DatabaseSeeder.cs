@@ -62,8 +62,6 @@ public static class DatabaseSeeder
         logger.LogWarning("RESET: Todas las tablas eliminadas.");
     }
 
-
-
     private static async Task SeedAdminAsync(AppDbContext ctx, ILogger logger)
     {
         if (await ctx.Users.IgnoreQueryFilters().AnyAsync(u => u.Email == "admin@lamur.com"))
@@ -141,3 +139,4 @@ public static class DatabaseSeeder
         logger.LogInformation("Seed: 12 productos de relojes creados.");
     }
 }
+
