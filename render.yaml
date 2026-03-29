@@ -25,4 +25,6 @@ services:
     - key: ASPNETCORE_ENVIRONMENT
       value: Production
     - key: Cors__AllowedOrigins__0
-      sync: false
+      value: https://relojes-lamur.web.app
+    - key: Cors__AllowedOrigins__1
+      value: http://localhost:4200
