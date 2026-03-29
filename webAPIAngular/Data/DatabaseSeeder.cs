@@ -77,4 +77,3 @@ public static class DatabaseSeeder
         logger.LogInformation("Seed: usuario admin creado (admin@lamur.com).");
     }
 }
-
