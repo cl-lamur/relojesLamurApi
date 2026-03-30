@@ -81,6 +81,9 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
+
+
+
 // ?? Controllers + respuesta de validación estandarizada ??????
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(o =>
@@ -89,18 +92,38 @@ builder.Services.AddControllers()
         {
             var errors = ctx.ModelState
                 .Where(e => e.Value?.Errors.Count > 0)
-                .SelectMany(e => e.Value!.Errors.Select(er => er.ErrorMessage))
+                .SelectMany(e => e.Value!.Errors.Select(er =>
+                {
+                    var campo = e.Key.Length > 0 ? $"[{e.Key}]" : "[body]";
+                    var valorEnviado = !string.IsNullOrEmpty(e.Value!.AttemptedValue)
+                        ? $" — valor recibido: \"{e.Value.AttemptedValue}\""
+                        : string.Empty;
+                    var mensaje = !string.IsNullOrWhiteSpace(er.ErrorMessage)
+                        ? er.ErrorMessage
+                        : er.Exception is not null
+                            ? $"Formato incorrecto: {er.Exception.Message}"
+                            : "Valor inválido.";
+                    return $"{campo}: {mensaje}{valorEnviado}";
+                }))
                 .ToList();
             return new BadRequestObjectResult(
-                ApiResponse.Fail("Datos de entrada invalidos.", errors));
+                ApiResponse.Fail("Validación fallida. Revisa los campos indicados.", errors));
         };
     });
+
+
+
+
+
+
 
 // ?? FluentValidation ?????????????????????????????????????????
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // ?? AutoMapper ???????????????????????????????????????????????
+
+
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // ?? Servicios de negocio ?????????????????????????????????????
@@ -110,6 +133,7 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService,   OrderService>();
 builder.Services.AddScoped<IUserService,    UserService>();
 builder.Services.AddScoped<FirebaseStorageService>();
+builder.Services.AddHttpContextAccessor();
 
 // ?? Swagger con boton Authorize JWT ??????????????????????????
 builder.Services.AddEndpointsApiExplorer();
@@ -146,6 +170,9 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
+    // Necesario para que Swashbuckle pueda documentar endpoints con IFormFile
+    c.MapType<IFormFile>(() => new OpenApiSchema { Type = "string", Format = "binary" });
 });
 
 
@@ -165,8 +192,6 @@ if (args.Contains("--reset"))
 await DatabaseSeeder.SeedAsync(app.Services);
 
 // ?? Pipeline ?????????????????????????????????????????????????
-app.UseMiddleware<GlobalExceptionMiddleware>();
-
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -174,6 +199,9 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty;
 });
 
+app.UseMiddleware<GlobalExceptionMiddleware>();
+
+app.UseStaticFiles();
 app.UseCors("LamurCors");
 app.UseRateLimiter();
 app.UseAuthentication();

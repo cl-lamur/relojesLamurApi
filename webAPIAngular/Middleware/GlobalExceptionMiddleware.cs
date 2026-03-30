@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using RelojesLamur.API.Common;
 
 namespace RelojesLamur.API.Middleware;
@@ -26,10 +27,12 @@ public class GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExcep
     {
         var (status, message) = exception switch
         {
-            InvalidOperationException e  => (HttpStatusCode.BadRequest,    e.Message),
-            UnauthorizedAccessException e => (HttpStatusCode.Unauthorized,  e.Message),
-            KeyNotFoundException e        => (HttpStatusCode.NotFound,      e.Message),
-            _                             => (HttpStatusCode.InternalServerError, "Error interno del servidor.")
+            InvalidOperationException e   => (HttpStatusCode.BadRequest,          e.Message),
+            UnauthorizedAccessException e => (HttpStatusCode.Unauthorized,         e.Message),
+            KeyNotFoundException e        => (HttpStatusCode.NotFound,             e.Message),
+            DbUpdateException e           => (HttpStatusCode.BadRequest,
+                                             $"Error al guardar en base de datos: {e.InnerException?.Message ?? e.Message}"),
+            _                             => (HttpStatusCode.InternalServerError,  "Error interno del servidor.")
         };
 
         context.Response.ContentType = "application/json";

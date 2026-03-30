@@ -10,3 +10,9 @@ public class StockResponseDto
     public int Id { get; set; }
     public bool InStock { get; set; }
 }
+
+public class UploadImageDto
+{
+    public IFormFile? File { get; set; }
+}
+

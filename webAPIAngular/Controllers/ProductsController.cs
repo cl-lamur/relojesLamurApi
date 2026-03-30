@@ -41,19 +41,23 @@ public class ProductsController(IProductService productService, FirebaseStorageS
 
     // POST /api/products/upload
     [HttpPost("upload")]
+    [Consumes("multipart/form-data")]
     [Authorize(Roles = "admin")]
-    public async Task<IActionResult> UploadImage(IFormFile file)
+    public async Task<IActionResult> UploadImage([FromForm] UploadImageDto dto)
     {
+        if (dto.File is null)
+            return BadRequest(ApiResponse.Fail("El archivo de imagen es obligatorio."));
+
         try
         {
-            var url = await firebaseStorageService.UploadAsync(file);
+            var url = await firebaseStorageService.UploadAsync(dto.File);
             return Ok(ApiResponse<object>.Ok(new { url }, "Imagen subida correctamente."));
         }
         catch (ArgumentException ex)
         {
             return BadRequest(ApiResponse.Fail(ex.Message));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, ApiResponse.Fail("Error al subir la imagen."));
         }
