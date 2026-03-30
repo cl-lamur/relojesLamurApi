@@ -24,4 +24,8 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 EXPOSE 8080
 
 COPY --from=build /app/publish .
+
+# Crear carpeta de imágenes con permisos de escritura
+RUN mkdir -p /app/wwwroot/ProductImages && chmod -R 777 /app/wwwroot
+
 ENTRYPOINT ["dotnet", "webAPIAngular.dll"]
