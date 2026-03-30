@@ -1,0 +1,246 @@
+# ?? Guía de Deploy a Producción — Relojes Lamur API
+
+## Información general
+
+| Item | Valor |
+|---|---|
+| **Host** | [Render.com](https://render.com) — plan Free |
+| **Servicio** | `relojes-lamur-api` |
+| **URL producción** | https://relojeslamurapi.onrender.com |
+| **Swagger** | https://relojeslamurapi.onrender.com/index.html |
+| **Health check** | https://relojeslamurapi.onrender.com/health |
+| **Runtime** | Docker (imagen multi-stage .NET 10 Preview) |
+| **Puerto** | 8080 |
+| **Repo** | https://github.com/cl-lamur/relojesLamurApi |
+
+---
+
+## Flujo de deploy (resumen)
+
+```
+Cambios en código
+      ?
+git add ? git commit ? git push origin master
+      ?
+Render detecta el push automáticamente
+      ?
+Docker build (~3–5 min)
+      ?
+Contenedor desplegado en https://relojeslamurapi.onrender.com
+```
+
+> **Render despliega automáticamente** cada vez que se hace push a la rama `master`.
+
+---
+
+## Paso 1 — Prerequisitos
+
+- [ ] Tener instalado **Git**
+- [ ] Tener instalado **.NET 10 SDK** (para compilar localmente si es necesario)
+- [ ] Tener acceso al repo: https://github.com/cl-lamur/relojesLamurApi
+- [ ] Tener cuenta en [Render.com](https://render.com) con el servicio `relojes-lamur-api` creado
+- [ ] Tener acceso a la base de datos MySQL de producción
+
+---
+
+## Paso 2 — Variables de entorno en Render
+
+Estas variables **deben estar configuradas** en Render Dashboard ? servicio `relojes-lamur-api` ? **Environment**:
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `ConnectionStrings__DefaultConnection` | Cadena de conexión MySQL prod | `server=xxx;database=relojes_lamur;uid=xxx;pwd=xxx` |
+| `Jwt__Secret` | Clave JWT (mínimo 32 caracteres) | `MiClaveSecretaMuyLargaParaJWT!2025` |
+| `Jwt__Issuer` | Emisor del token | `RelojesLamurAPI` |
+| `Jwt__Audience` | Audiencia del token | `RelojesLamurClient` |
+| `Jwt__ExpirationDays` | Días de expiración del JWT | `7` |
+| `ASPNETCORE_ENVIRONMENT` | Entorno | `Production` |
+| `ASPNETCORE_URLS` | URL de escucha | `http://+:8080` |
+| `PORT` | Puerto | `8080` |
+| `Cors__AllowedOrigins__0` | Origen CORS frontend prod | `https://relojes-lamur.web.app` |
+| `Cors__AllowedOrigins__1` | Origen CORS dev local | `http://localhost:4200` |
+
+> ?? **Nunca** guardes `Jwt__Secret` ni `ConnectionStrings` directamente en el código o en el repo.
+
+---
+
+## Paso 3 — Base de datos (primera vez)
+
+Si es la primera vez o necesitás resetear la BD:
+
+### Opción A: Ejecutar el script SQL manualmente
+
+```bash
+# Conectarse al servidor MySQL de producción
+mysql -h TU_HOST -u TU_USUARIO -p TU_BASE_DE_DATOS < webAPIAngular/Scripts/RelojesLamurDb_MySQL.sql
+```
+
+### Opción B: EF Core Migrations
+
+```bash
+cd webAPIAngular
+
+# Aplicar migraciones con la cadena de conexión de producción
+dotnet ef database update \
+  --connection "server=HOST;database=relojes_lamur;uid=USER;pwd=PASS"
+```
+
+### Opción C: Reset completo + Seed (datos de ejemplo)
+
+```bash
+# Inicia la API en modo reset — reinicia la BD y carga los datos de ejemplo
+dotnet run -- --reset
+```
+
+> ?? El seed incluye:
+> - Usuario admin: `admin@lamur.com` / `Admin123!`
+> - 12 relojes de ejemplo (6 hombre, 6 mujer)
+
+---
+
+## Paso 4 — Deploy (flujo normal)
+
+```bash
+# 1. Ir a la carpeta del repo
+cd C:\Users\Lenovo\source\repos\webAPIAngular
+
+# 2. Ver qué cambios hay
+git status
+
+# 3. Agregar todos los cambios
+git add -A
+
+# 4. Hacer commit con mensaje descriptivo
+git commit -m "descripción del cambio"
+
+# 5. Push a master ? Render inicia el deploy automáticamente
+git push origin master
+```
+
+---
+
+## Paso 5 — Verificar el deploy
+
+### Verificar que la API responde
+
+```bash
+# Health check
+curl https://relojeslamurapi.onrender.com/health
+# Respuesta esperada: { "status": "healthy" }
+```
+
+### Verificar endpoints principales
+
+```bash
+# Listar productos
+curl https://relojeslamurapi.onrender.com/api/products
+
+# Login
+curl -X POST https://relojeslamurapi.onrender.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@lamur.com","password":"Admin123!"}'
+```
+
+### Ver logs en Render
+
+1. Ir a https://dashboard.render.com
+2. Seleccionar servicio `relojes-lamur-api`
+3. Pestaña **Logs** — ver logs en tiempo real
+4. Pestaña **Deploys** — ver historial de deployments
+
+---
+
+## Paso 6 — Deploy del Frontend (Firebase Hosting)
+
+```bash
+# Ir a la carpeta del frontend Angular
+cd "C:\sistema angular\sistemaAngular"
+
+# Build de producción
+npm run build
+
+# Deploy a Firebase
+npx firebase deploy --only hosting
+```
+
+> URL producción frontend: https://relojes-lamur.web.app
+
+---
+
+## Estructura de URLs en producción
+
+```
+API (Render):
+  https://relojeslamurapi.onrender.com/api/auth/login
+  https://relojeslamurapi.onrender.com/api/auth/register
+  https://relojeslamurapi.onrender.com/api/auth/me
+  https://relojeslamurapi.onrender.com/api/products
+  https://relojeslamurapi.onrender.com/api/products/{id}
+  https://relojeslamurapi.onrender.com/api/products/upload    ? subir imágenes
+  https://relojeslamurapi.onrender.com/api/orders
+  https://relojeslamurapi.onrender.com/api/users
+  https://relojeslamurapi.onrender.com/ProductImages/{file}   ? imágenes guardadas
+
+Frontend (Firebase):
+  https://relojes-lamur.web.app
+```
+
+---
+
+## Consideraciones importantes
+
+### ?? Imágenes en disco (efímero)
+
+Render usa contenedores Docker **efímeros**: los archivos guardados en `wwwroot/ProductImages` durante el runtime **se pierden** con cada redeploy o restart.
+
+**Para persistencia real**, migrar a:
+- Firebase Storage (ya configurado en `FirebaseStorageService.cs`)
+- Azure Blob Storage
+- Amazon S3
+
+### ?? Cold Start en plan Free
+
+El plan Free de Render **hiberna el servicio** si no recibe tráfico en ~15 minutos.
+La primera petición después de hibernación puede tardar **30–60 segundos**.
+
+Para evitarlo:
+- Upgradear a plan Starter ($7/mes) en Render
+- O usar un cron job externo que haga ping cada 10 minutos a `/health`
+
+### ?? Seguridad
+
+- El `Jwt__Secret` debe tener **mínimo 32 caracteres**
+- Las contraseñas de usuarios se almacenan con **BCrypt** (nunca en texto plano)
+- Los endpoints de admin requieren `[Authorize(Roles = "admin")]`
+- El login tiene **rate limiting**: máximo 10 intentos por minuto por IP
+
+---
+
+## Comandos útiles (resumen rápido)
+
+```bash
+# Ver estado del repo
+git status
+
+# Ver últimos commits
+git log --oneline -5
+
+# Compilar localmente
+dotnet build webAPIAngular
+
+# Ejecutar localmente
+dotnet run --project webAPIAngular
+
+# Ejecutar con reset de BD
+dotnet run --project webAPIAngular -- --reset
+
+# Deploy (push ? Render auto-despliega)
+git add -A && git commit -m "mensaje" && git push origin master
+
+# Deploy frontend
+cd "C:\sistema angular\sistemaAngular" && npm run build && npx firebase deploy --only hosting
+```
+
+---
+
+*Última actualización: generado automáticamente — Relojes Lamur API v1*
